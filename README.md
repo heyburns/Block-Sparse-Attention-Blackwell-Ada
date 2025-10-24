@@ -1,3 +1,9 @@
+This fork updates Block-Sparse-Attention to run cleanly on NVIDIA’s latest GPUs. It broadens the build targets to include Ada (sm_89) and Blackwell (sm_100+) architectures and removes legacy runtime guards that rejected post-Ampere devices, so FlashVSR and related extensions compile and execute seamlessly on modern CUDA toolchains.
+
+Build with "TORCH_CUDA_ARCH_LIST="10.0" MAX_JOBS=4 python setup.py install" Adjust max jobs up or down based on the amount of RAM available. 4 is a good starting point for 64GB systems.
+
+I CANNOT GUARANTEE THAT IT WORKS CORRECTLY ON THESE GPUS, ONLY THAT IT COMPILES AND RUNS. YOU ARE ON YOUR OWN AFTER THAT. THE ORIGINAL DEVELOPER CANNOT SUPPORT THIS FORK, SO PLEASE DON'T REPORT BUGS TO THEM BASED ON MY HACKS.
+
 # Block Sparse Attention
 
 As prompt lengths continue to increase, the computational and memory bandwidth demands of Large Language Models (LLMs) grow significantly, making efficient processing more challenging. However, by fully leveraging the inherent sparsity in attention patterns, we can optimize the model’s performance, effectively reducing inference costs in computation. This approach not only enhances the efficiency of LLMs but also enables them to handle longer and more complex prompts without a proportional increase in resource consumption. To this end, we introduce Block Sparse Attention, a library of sparse attention kernels that supports various sparse patterns, including streaming attention with token granularity, streaming attention with block granularity, and block-sparse attention. By incorporating these patterns, Block Sparse Attention can significantly reduce the computational costs of LLMs, thereby enhancing their efficiency and scalability.
