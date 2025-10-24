@@ -279,18 +279,17 @@ mha_fwd(at::Tensor &q,         // batch_size x seqlen_q x num_heads x head_size
         c10::optional<at::Generator> gen_) {
 
     auto dprops = at::cuda::getCurrentDeviceProperties();
-    // bool is_sm75 = dprops->major == 7 && dprops->minor == 5;
-    bool is_sm8x = dprops->major == 8 && dprops->minor >= 0;
-    bool is_sm90 = dprops->major == 9 && dprops->minor == 0;
-    TORCH_CHECK(is_sm90 || is_sm8x, "FlashAttention only supports Ampere GPUs or newer.");
+    const int major = dprops->major;
+    const bool is_ampere_or_newer = major >= 8;
+    TORCH_CHECK(is_ampere_or_newer, "FlashAttention only supports Ampere GPUs or newer.");
     // We will support Turing in the near future
-    // TORCH_CHECK(is_sm90 || is_sm8x || is_sm75, "FlashAttention only supports Turing GPUs or newer.");
+    // TORCH_CHECK(is_ampere_or_newer || (dprops->major == 7 && dprops->minor == 5), "FlashAttention only supports Turing GPUs or newer.");
 
     auto q_dtype = q.dtype();
     TORCH_CHECK(q_dtype == torch::kFloat16 || q_dtype == torch::kBFloat16,
                 "FlashAttention only support fp16 and bf16 data type");
     if (q_dtype == torch::kBFloat16) {
-        TORCH_CHECK(is_sm90 || is_sm8x, "bfloat16 is only supported on Ampere GPUs or newer");
+        TORCH_CHECK(is_ampere_or_newer, "bfloat16 is only supported on Ampere GPUs or newer");
     }
     TORCH_CHECK(k.dtype() == q_dtype, "query and key must have the same dtype");
     TORCH_CHECK(v.dtype() == q_dtype, "query and value must have the same dtype");
@@ -488,18 +487,17 @@ mha_varlen_fwd(const at::Tensor &q,  // total_q x num_heads x head_size, total_q
 
     if (is_causal) { window_size_right = 0; }
     auto dprops = at::cuda::getCurrentDeviceProperties();
-    // bool is_sm75 = dprops->major == 7 && dprops->minor == 5;
-    bool is_sm8x = dprops->major == 8 && dprops->minor >= 0;
-    bool is_sm90 = dprops->major == 9 && dprops->minor == 0;
-    TORCH_CHECK(is_sm90 || is_sm8x, "FlashAttention only supports Ampere GPUs or newer.");
+    const int major = dprops->major;
+    const bool is_ampere_or_newer = major >= 8;
+    TORCH_CHECK(is_ampere_or_newer, "FlashAttention only supports Ampere GPUs or newer.");
     // We will support Turing in the near future
-    // TORCH_CHECK(is_sm90 || is_sm8x || is_sm75, "FlashAttention only supports Turing GPUs or newer.");
+    // TORCH_CHECK(is_ampere_or_newer || (dprops->major == 7 && dprops->minor == 5), "FlashAttention only supports Turing GPUs or newer.");
 
     auto q_dtype = q.dtype();
     TORCH_CHECK(q_dtype == torch::kFloat16 || q_dtype == torch::kBFloat16,
                 "FlashAttention only support fp16 and bf16 data type");
     if (q_dtype == torch::kBFloat16) {
-        TORCH_CHECK(is_sm90 || is_sm8x, "bfloat16 is only supported on Ampere GPUs or newer");
+        TORCH_CHECK(is_ampere_or_newer, "bfloat16 is only supported on Ampere GPUs or newer");
     }
     TORCH_CHECK(k.dtype() == q_dtype, "query and key must have the same dtype");
     TORCH_CHECK(v.dtype() == q_dtype, "query and value must have the same dtype");
@@ -710,13 +708,14 @@ mha_bwd(const at::Tensor &dout,  // batch_size x seqlen_q x num_heads, x head_si
 
     if (is_causal) { window_size_right = 0; }
     auto dprops = at::cuda::getCurrentDeviceProperties();
-    // bool is_sm75 = dprops->major == 7 && dprops->minor == 5;
-    bool is_sm8x = dprops->major == 8 && dprops->minor >= 0;
-    bool is_sm80 = dprops->major == 8 && dprops->minor == 0;
-    bool is_sm90 = dprops->major == 9 && dprops->minor == 0;
-    TORCH_CHECK(is_sm90 || is_sm8x, "FlashAttention only supports Ampere GPUs or newer.");
+    const int major = dprops->major;
+    const int minor = dprops->minor;
+    const bool is_sm80 = major == 8 && minor == 0;
+    const bool is_sm90 = major == 9 && minor == 0;
+    const bool is_ampere_or_newer = major >= 8;
+    TORCH_CHECK(is_ampere_or_newer, "FlashAttention only supports Ampere GPUs or newer.");
     // We will support Turing in the near future
-    // TORCH_CHECK(is_sm90 || is_sm8x || is_sm75, "FlashAttention only supports Turing GPUs or newer.");
+    // TORCH_CHECK(is_ampere_or_newer || (dprops->major == 7 && dprops->minor == 5), "FlashAttention only supports Turing GPUs or newer.");
 
     bool is_dropout = p_dropout > 0.0;
     auto stream = at::cuda::getCurrentCUDAStream().stream();
@@ -725,7 +724,7 @@ mha_bwd(const at::Tensor &dout,  // batch_size x seqlen_q x num_heads, x head_si
     TORCH_CHECK(q_dtype == torch::kFloat16 || q_dtype == torch::kBFloat16,
                 "FlashAttention only support fp16 and bf16 data type");
     if (q_dtype == torch::kBFloat16) {
-        TORCH_CHECK(is_sm90 || is_sm8x, "bfloat16 is only supported on Ampere GPUs or newer");
+        TORCH_CHECK(is_ampere_or_newer, "bfloat16 is only supported on Ampere GPUs or newer");
     }
     TORCH_CHECK(k.dtype() == q_dtype, "query and key must have the same dtype");
     TORCH_CHECK(v.dtype() == q_dtype, "query and value must have the same dtype");
@@ -950,13 +949,14 @@ mha_varlen_bwd(const at::Tensor &dout,  // total_q x num_heads, x head_size
 
     if (is_causal) { window_size_right = 0; }
     auto dprops = at::cuda::getCurrentDeviceProperties();
-    // bool is_sm75 = dprops->major == 7 && dprops->minor == 5;
-    bool is_sm8x = dprops->major == 8 && dprops->minor >= 0;
-    bool is_sm80 = dprops->major == 8 && dprops->minor == 0;
-    bool is_sm90 = dprops->major == 9 && dprops->minor == 0;
-    TORCH_CHECK(is_sm90 || is_sm8x, "FlashAttention only supports Ampere GPUs or newer.");
+    const int major = dprops->major;
+    const int minor = dprops->minor;
+    const bool is_sm80 = major == 8 && minor == 0;
+    const bool is_sm90 = major == 9 && minor == 0;
+    const bool is_ampere_or_newer = major >= 8;
+    TORCH_CHECK(is_ampere_or_newer, "FlashAttention only supports Ampere GPUs or newer.");
     // We will support Turing in the near future
-    // TORCH_CHECK(is_sm90 || is_sm8x || is_sm75, "FlashAttention only supports Turing GPUs or newer.");
+    // TORCH_CHECK(is_ampere_or_newer || (dprops->major == 7 && dprops->minor == 5), "FlashAttention only supports Turing GPUs or newer.");
     bool is_dropout = p_dropout > 0.0;
     auto stream = at::cuda::getCurrentCUDAStream().stream();
 
@@ -964,7 +964,7 @@ mha_varlen_bwd(const at::Tensor &dout,  // total_q x num_heads, x head_size
     TORCH_CHECK(q_dtype == torch::kFloat16 || q_dtype == torch::kBFloat16,
                 "FlashAttention only support fp16 and bf16 data type");
     if (q_dtype == torch::kBFloat16) {
-        TORCH_CHECK(is_sm90 || is_sm8x, "bfloat16 is only supported on Ampere GPUs or newer");
+        TORCH_CHECK(is_ampere_or_newer, "bfloat16 is only supported on Ampere GPUs or newer");
     }
     TORCH_CHECK(k.dtype() == q_dtype, "query and key must have the same dtype");
     TORCH_CHECK(v.dtype() == q_dtype, "query and value must have the same dtype");
@@ -1200,18 +1200,17 @@ mha_fwd_kvcache(at::Tensor &q,                 // batch_size x seqlen_q x num_he
                 ) {
 
     auto dprops = at::cuda::getCurrentDeviceProperties();
-    // bool is_sm75 = dprops->major == 7 && dprops->minor == 5;
-    bool is_sm8x = dprops->major == 8 && dprops->minor >= 0;
-    bool is_sm90 = dprops->major == 9 && dprops->minor == 0;
-    TORCH_CHECK(is_sm90 || is_sm8x, "FlashAttention only supports Ampere GPUs or newer.");
+    const int major = dprops->major;
+    const bool is_ampere_or_newer = major >= 8;
+    TORCH_CHECK(is_ampere_or_newer, "FlashAttention only supports Ampere GPUs or newer.");
     // We will support Turing in the near future
-    // TORCH_CHECK(is_sm90 || is_sm8x || is_sm75, "FlashAttention only supports Turing GPUs or newer.");
+    // TORCH_CHECK(is_ampere_or_newer || (dprops->major == 7 && dprops->minor == 5), "FlashAttention only supports Turing GPUs or newer.");
 
     auto q_dtype = q.dtype();
     TORCH_CHECK(q_dtype == torch::kFloat16 || q_dtype == torch::kBFloat16,
                 "FlashAttention only support fp16 and bf16 data type");
     if (q_dtype == torch::kBFloat16) {
-        TORCH_CHECK(is_sm90 || is_sm8x, "bfloat16 is only supported on Ampere GPUs or newer");
+        TORCH_CHECK(is_ampere_or_newer, "bfloat16 is only supported on Ampere GPUs or newer");
     }
     TORCH_CHECK(kcache.dtype() == q_dtype, "query and key must have the same dtype");
     TORCH_CHECK(vcache.dtype() == q_dtype, "query and value must have the same dtype");
@@ -1470,9 +1469,8 @@ mha_fwd_block(const at::Tensor &q,
               c10::optional<at::Generator> gen_)
 {
     auto dprops = at::cuda::getCurrentDeviceProperties();
-    // bool is_sm75 = dprops->major == 7 && dprops->minor == 5;
-    bool is_sm8x = dprops->major == 8 && dprops->minor >= 0;
-    bool is_sm90 = dprops->major == 9 && dprops->minor == 0;
+    const int major = dprops->major;
+    const bool is_ampere_or_newer = major >= 8;
     const bool has_blockmask = row_blockmask_.has_value();
     const bool has_streaming_info = streaming_info_.has_value();
     at::Tensor row_blockmask, streaming_info;
@@ -1482,14 +1480,14 @@ mha_fwd_block(const at::Tensor &q,
     if (has_streaming_info){
         streaming_info = streaming_info_.value();
     }
-    TORCH_CHECK(is_sm90 || is_sm8x, "FlashAttention only supports Ampere GPUs or newer.");
+    TORCH_CHECK(is_ampere_or_newer, "FlashAttention only supports Ampere GPUs or newer.");
 
     auto q_dtype = q.dtype();
     TORCH_CHECK(q_dtype == torch::kFloat16 || q_dtype == torch::kBFloat16,
                 "FlashAttention only support fp16 and bf16 data type");
 
     if (q_dtype == torch::kBFloat16) {
-        TORCH_CHECK(is_sm90 || is_sm8x, "bfloat16 is only supported on Ampere GPUs or newer");
+        TORCH_CHECK(is_ampere_or_newer, "bfloat16 is only supported on Ampere GPUs or newer");
     }
     TORCH_CHECK(k.dtype() == q_dtype, "query and key must have the same dtype");
     TORCH_CHECK(v.dtype() == q_dtype, "query and value must have the same dtype");
@@ -1701,9 +1699,11 @@ mha_bwd_block(const at::Tensor &dout,  // total_q x num_heads, x head_size
 {
     if (is_causal) { window_size_right = 0; }
     auto dprops = at::cuda::getCurrentDeviceProperties();
-    bool is_sm8x = dprops->major == 8 && dprops->minor >= 0;
-    bool is_sm80 = dprops->major == 8 && dprops->minor == 0;
-    bool is_sm90 = dprops->major == 9 && dprops->minor == 0;
+    const int major = dprops->major;
+    const int minor = dprops->minor;
+    bool is_sm80 = major == 8 && minor == 0;
+    bool is_sm90 = major == 9 && minor == 0;
+    const bool is_ampere_or_newer = major >= 8;
     const bool has_blockmask = col_blockmask_.has_value();
     const bool has_streaming_info = streaming_info_.has_value();
     at::Tensor col_blockmask, streaming_info;
@@ -1714,7 +1714,7 @@ mha_bwd_block(const at::Tensor &dout,  // total_q x num_heads, x head_size
         streaming_info = streaming_info_.value();
     }
 
-    TORCH_CHECK(is_sm90 || is_sm8x, "FlashAttention only supports Ampere GPUs or newer."); 
+    TORCH_CHECK(is_ampere_or_newer, "FlashAttention only supports Ampere GPUs or newer."); 
     
     bool is_dropout = p_dropout > 0.0;
 
@@ -1724,7 +1724,7 @@ mha_bwd_block(const at::Tensor &dout,  // total_q x num_heads, x head_size
     TORCH_CHECK(q_dtype == torch::kFloat16 || q_dtype == torch::kBFloat16,
                 "FlashAttention only support fp16 and bf16 data type");
     if (q_dtype == torch::kBFloat16) {
-        TORCH_CHECK(is_sm90 || is_sm8x, "bfloat16 is only supported on Ampere GPUs or newer");
+        TORCH_CHECK(is_ampere_or_newer, "bfloat16 is only supported on Ampere GPUs or newer");
     }
     TORCH_CHECK(k.dtype() == q_dtype, "query and key must have the same dtype");
     TORCH_CHECK(v.dtype() == q_dtype, "query and value must have the same dtype");
