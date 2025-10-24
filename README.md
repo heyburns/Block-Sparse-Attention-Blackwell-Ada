@@ -1,4 +1,11 @@
-Minimal fork that adds Ada (sm_89) and Blackwell (sm_100+) support so Block-Sparse-Attention builds with `pip install -e .`. Verified only on Windows 11 + Python 3.12 + PyTorch 2.8.0+cu129 + CUDA 12.9—**use at your own risk and do not send bug reports to the upstream developers.**
+This UNOFFICIAL fork updates Block-Sparse-Attention to run cleanly on NVIDIA’s latest GPUs. It broadens the build targets to include Ada (sm_89) and Blackwell (sm_100+) architectures and removes legacy runtime guards that rejected post-Ampere devices, so FlashVSR and related extensions compile and execute seamlessly on modern CUDA toolchains. Testd on Windows 11 with Python 3.12, PyTorch 2.8.0+cu129, and CUDA 12.9 — USE AT YOUR OWN RISK AND DO NOT REPORT ISSUES UPSTREAM.
+
+Follow installation procedures below and then build with:
+TORCH_CUDA_ARCH_LIST="10.0" MAX_JOBS=4 python setup.py install
+
+Adjust max jobs up or down based on the amount of RAM available. 4 is a good starting point for 64GB systems.
+
+I CANNOT GUARANTEE THAT IT WORKS CORRECTLY, ONLY THAT IT COMPILES AND RUNS. YOU ARE ON YOUR OWN AFTER THAT. THE ORIGINAL DEVELOPER CANNOT SUPPORT THIS FORK, SO PLEASE DON'T REPORT BUGS TO THEM BASED ON MY HACKS.
 
 # Block Sparse Attention
 
